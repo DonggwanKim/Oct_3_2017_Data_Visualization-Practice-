@@ -1,0 +1,199 @@
+---
+title: "Practice"
+author: "DK"
+date: "October 3, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+setwd("/Users/donggwankim/Downloads")
+library(ggplot2)
+library(dplyr)
+library(ggthemes)
+library(grid)
+library(gridExtra)
+library(fBasics)
+```
+
+### Data Import
+
+##### Here, I am exploring a data set on some CEOs and their donation amount (in USD) for each election cycle. Let's first look at what it looks like!
+
+##### So each individual is assigned a uniue id, which is "NEW_PERSON_ID", and we have data on amount of political donation.
+
+```{r}
+mydata = read.csv("all_cont_agg.csv")
+head(mydata)
+```
+
+##### Let's take a closer look. So this one CEO donated $1000, $750, and $500 in 2002, 2004, and 2008 but gave $0 in 2006, 2010, 2012.
+
+```{r}
+mydata[mydata$NEW_PERSON_ID == "ID_000003",]
+```
+
+### Data Manipulation
+
+##### Here, we try to get rid of rows containing negative donations. In some cases where people got a refund, the amount of donation is recored as a negative value. This makes it harder to explore the data and these cases are usually one digit, which won't be a big deal.
+
+```{r}
+data_1 = mydata[mydata$ELECTION_CYCLE == 2002, ]
+data_1 = data_1[order(-data_1$TRANSACTION_AMT), ]
+data_1 = data_1[1:sum(data_1$TRANSACTION_AMT > 0) , ]
+data_1$X = seq(1:nrow(data_1))
+
+data_2 = mydata[mydata$ELECTION_CYCLE == 2004, ]
+data_2 = data_2[order(-data_2$TRANSACTION_AMT), ]
+data_2 = data_2[1:sum(data_2$TRANSACTION_AMT > 0), ]
+data_2$X = seq(1:nrow(data_2))
+
+data_3 = mydata[mydata$ELECTION_CYCLE == 2006, ]
+data_3 = data_3[order(-data_3$TRANSACTION_AMT), ]
+data_3 = data_3[1:sum(data_3$TRANSACTION_AMT > 0), ]
+data_3$X = seq(1:nrow(data_3))
+
+data_4 = mydata[mydata$ELECTION_CYCLE == 2008, ]
+data_4 = data_4[order(-data_4$TRANSACTION_AMT), ]
+data_4 = data_4[1:sum(data_4$TRANSACTION_AMT > 0), ]
+data_4$X = seq(1:nrow(data_4))
+
+data_5 = mydata[mydata$ELECTION_CYCLE == 2010, ]
+data_5 = data_5[order(-data_5$TRANSACTION_AMT), ]
+data_5 = data_5[1:sum(data_5$TRANSACTION_AMT > 0), ]
+data_5$X = seq(1:nrow(data_5))
+
+data_6 = mydata[mydata$ELECTION_CYCLE == 2012, ]
+data_6 = data_6[order(-data_6$TRANSACTION_AMT), ]
+data_6 = data_6[1:sum(data_6$TRANSACTION_AMT > 0), ]
+data_6$X = seq(1:nrow(data_6))
+
+total = rbind(data_1, data_2, data_3, data_4, data_5, data_6)
+```
+
+### Summary Tables
+
+##### We first look at the summary table on raw data. Since it's too large in mean and standard deviation, we'd need to take the log! 
+
+```{r}
+summary_table_1 = mydata %>%
+  group_by(ELECTION_CYCLE) %>%
+  summarise(mean = mean(TRANSACTION_AMT, na.rm = TRUE),
+            sd = sd(TRANSACTION_AMT, na.rm = TRUE),
+            skew = skewness(TRANSACTION_AMT, na.rm = TRUE),
+            kurt = kurtosis(TRANSACTION_AMT, na.rm = TRUE)
+            )
+
+summary_table_1
+```
+
+##### Belew is the summary table in logarithm. Mean and SD tend to behave nicer and we can notice that 2012 is looking a little different than previous years.
+
+```{r}
+summary_table_2 =total %>%
+  group_by(ELECTION_CYCLE) %>%
+  summarise(mean = mean(log(TRANSACTION_AMT), na.rm = TRUE),
+            sd = sd(log(TRANSACTION_AMT), na.rm = TRUE),
+            skew = skewness(log(TRANSACTION_AMT), na.rm = TRUE),
+            kurt = kurtosis(log(TRANSACTION_AMT), na.rm = TRUE)
+            )
+
+summary_table_2
+```
+
+### Comprison to Normal distribution
+
+```{r}
+f_0 = ggplot(data = total[total$ELECTION_CYCLE == 2002, ]) +
+  geom_density(aes(x = log(TRANSACTION_AMT))) +
+  stat_function(fun = dnorm, n = 101, args = list(mean = 8.157995, sd = 1.361059), color = "red") +
+  xlab("Donation in Log (2002)") +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  scale_x_continuous(limits = c(2, 18)) +
+  theme_bw()
+
+f_1 = fig_0 = ggplot(data = total[total$ELECTION_CYCLE == 2004, ]) +
+  geom_density(aes(x = log(TRANSACTION_AMT))) +
+  stat_function(fun = dnorm, n = 101, args = list(mean = 8.424007, sd = 1.500482), color = "red") +
+  xlab("Donation in Log (2004)") +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  scale_x_continuous(limits = c(2, 18)) +
+  theme_bw()
+
+f_2 = fig_0 = ggplot(data = total[total$ELECTION_CYCLE == 2006, ]) +
+  geom_density(aes(x = log(TRANSACTION_AMT))) +
+  stat_function(fun = dnorm, n = 101, args = list(mean = 8.538324, sd = 1.537081), color = "red") +
+  xlab("Donation in Log (2006)") +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  scale_x_continuous(limits = c(2, 18)) +
+  theme_bw()
+
+f_3 = fig_0 = ggplot(data = total[total$ELECTION_CYCLE == 2008, ]) +
+  geom_density(aes(x = log(TRANSACTION_AMT))) +
+  stat_function(fun = dnorm, n = 101, args = list(mean = 8.849660, sd = 1.598885), color = "red") +
+  xlab("Donation in Log (2008)") +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  scale_x_continuous(limits = c(2, 18)) +
+  theme_bw()
+
+f_4 = fig_0 = ggplot(data = total[total$ELECTION_CYCLE == 2010, ]) +
+  geom_density(aes(x = log(TRANSACTION_AMT))) +
+  stat_function(fun = dnorm, n = 101, args = list(mean = 8.697961, sd = 1.596582), color = "red") +
+  xlab("Donation in Log (2010)") +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  scale_x_continuous(limits = c(2, 18)) +
+  theme_bw()
+
+f_5 = fig_0 = ggplot(data = total[total$ELECTION_CYCLE == 2012, ]) +
+  geom_density(aes(x = log(TRANSACTION_AMT))) +
+  stat_function(fun = dnorm, n = 101, args = list(mean = 8.949806, sd = 1.794551), color = "red") +
+  xlab("Donation in Log (2012)") +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  scale_x_continuous(limits = c(2, 18)) +
+  theme_bw()
+
+myplotslist = list(f_0, f_1, f_2, f_3, f_4, f_5)
+do.call(grid.arrange, c(myplotslist, ncol=2))
+```
+
+### Zipf's Law
+
+##### According to Zipf's law, the first rank appears twice as much as the second rank, and three times as much as the third rank. It tends to fit well in Natural Lnaguage Processing and other areas, so I just wanted to see if it fits the data well.
+
+##### We can see that in 2012, the people donated a lot more than the previous years (Note: donation amount is in log), and it's because of some changes in law, which deregularized the amount to politicial donation. 
+
+```{r}
+fig_1= ggplot(data = total)+
+  geom_line(aes(x = log(X), y = log(TRANSACTION_AMT), color = as.factor(ELECTION_CYCLE))) +
+  xlab("Rank in Log") +
+  ylab("Donation in Log") +
+  labs(color='Year') +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  scale_x_continuous(limits = c(0, 8.5), breaks = seq(0, 8, 1)) +
+  scale_y_continuous(limits = c(0, 17.5), breaks=seq(0, 17.5, 2.5)) +
+  theme_bw() +
+  ggtitle("Zipf's Law")
+fig_1
+```
+
+### Cumulative Distribution
+
+##### Here, I am plotting a cumulative distribution for each year. Since it's a discrete distribution, 0.5 in the y-axis means P(X <= log(e^9)) in the case of 2012. Again, we can see that CEOs donated larger amount of money in 2012.
+
+```{r}
+fig_2 =  ggplot(data = total)+
+  stat_ecdf(aes(x = log(TRANSACTION_AMT), color = as.factor(ELECTION_CYCLE)))+
+  xlab("Donation in Log") +
+  ylab("P(X <= log(Donation))") +
+  labs(color='Year') +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(limits = c(0, 16), breaks = seq(0, 16, 2)) +
+  scale_y_continuous(limits = c(0, 1), breaks=seq(0, 1, 0.1)) +
+  theme_bw() +
+  ggtitle("Cumulative Distribution wrt. Donation in Log")
+fig_2
+```
+
+
